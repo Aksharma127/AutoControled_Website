@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;700;900&display=swap');
+
+/* ── Custom theme (Tailwind v4 CSS-native) ───────────────────── */
+@theme {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
+
+  --color-primary: #6366f1;
+  /* Indigo */
+  --color-secondary: #a855f7;
+  /* Purple */
+  --color-accent: #14b8a6;
+  /* Teal */
+  --color-background: #09090b;
+  /* Zinc 950 */
+}
+
+/* ── Base Reset ──────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #09090b;
+  color: #fafafa;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  --bai-accent: #22d3ee;
+  --bai-wobble: 0.6;
+}
+
+/* ── Font helpers ─────────────────────────────────────────────── */
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--bai-accent) 35%, transparent);
+}
+
+a.no-underline {
+  text-decoration: none;
+}
+
+/* ── Gradient text ────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #e0e7ff, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Custom Utilities ─────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.adaptive-accent {
+  box-shadow: 0 0 calc(20px + (var(--bai-wobble) * 12px)) color-mix(in srgb, var(--bai-accent) 30%, transparent);
+}

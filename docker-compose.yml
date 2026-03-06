@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: organism_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-change_me_now}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_PROCESS=main
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      # Paste your Gemini API key here
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # Mount the ml/ folder so n8n can call classify_user.py
+      - ./ml:/data/ml
+    networks:
+      - organism_net
+
+  # Optional: Postgres for n8n workflow storage (more reliable than SQLite)
+  # Uncomment if you want persistent n8n storage:
+  # postgres:
+  #   image: postgres:15
+  #   container_name: organism_postgres
+  #   environment:
+  #     POSTGRES_USER: n8n
+  #     POSTGRES_PASSWORD: n8n_secure_pass
+  #     POSTGRES_DB: n8n
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - organism_net
+
+volumes:
+  n8n_data:
+  # postgres_data:
+
+networks:
+  organism_net:
+    driver: bridge

@@ -1,0 +1,251 @@
+{
+    "name": "Organism Agentic Loop",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "minutesInterval": 1
+                        }
+                    ]
+                }
+            },
+            "name": "Every Hour",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "sessions",
+                "filterType": "string",
+                "filterString": "pulse_count=gte.5&persona_id=is.null"
+            },
+            "name": "Get Unclassified Sessions",
+            "type": "n8n-nodes-base.supabase",
+            "position": [
+                460,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "1",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "command": "cd /data/ml && echo '{{ JSON.stringify($json) }}' | python3 classify_user.py"
+            },
+            "name": "Classify Persona",
+            "type": "n8n-nodes-base.executeCommand",
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "tableId": "sessions",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyName": "ip_hash",
+                            "keyValue": "={{ $('Get Unclassified Sessions').item.json.ip_hash }}"
+                        }
+                    ]
+                },
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "persona_id",
+                            "fieldValue": "={{ JSON.parse($json.stdout).persona_id }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Update Persona",
+            "type": "n8n-nodes-base.supabase",
+            "position": [
+                900,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "1",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+                "authentication": "predefinedCredentialType",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-goog-api-key",
+                            "value": "={{ $env.GEMINI_API_KEY }}"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "contents",
+                            "value": "[{\"parts\":[{\"text\":\"You are a UI architect for Organism website.\\nUser persona: {{ $('Update Persona').item.json.persona_id }}\\nAvg X: {{ $('Get Unclassified Sessions').item.json.avg_x }}\\nScrollSpeed: {{ $('Get Unclassified Sessions').item.json.scroll_speed }}\\nDwell: {{ $('Get Unclassified Sessions').item.json.dwell_seconds }}\\nReturn ONLY valid JSON: {\\\"cardOrder\\\":[1,2,3,4],\\\"navPriority\\\":[\\\"cta\\\",\\\"about\\\",\\\"features\\\",\\\"blog\\\"],\\\"heroStyle\\\":\\\"immersive\\\",\\\"colorMood\\\":\\\"energetic\\\",\\\"wobblyIntensity\\\":0.6}\"}]}]"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Gemini UI Config",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const DEFAULT_CONFIG = {\n  cardOrder: [1, 2, 3, 4],\n  navPriority: ['cta', 'about', 'features', 'blog'],\n  heroStyle: 'immersive',\n  colorMood: 'energetic',\n  wobblyIntensity: 0.6,\n};\n\nconst allowedHero = new Set(['minimal', 'immersive', 'compact']);\nconst allowedMood = new Set(['calm', 'energetic', 'focused']);\nconst allowedNav = new Set(['cta', 'about', 'features', 'blog']);\nconst allowedCards = new Set([1, 2, 3, 4]);\n\nfunction sanitize(input) {\n  const cfg = { ...DEFAULT_CONFIG };\n  const errors = [];\n\n  if (Array.isArray(input.cardOrder) && input.cardOrder.length === 4) {\n    const cards = input.cardOrder.map((x) => Number(x));\n    if (cards.every(Number.isFinite) && cards.every((x) => allowedCards.has(x)) && new Set(cards).size === 4) {\n      cfg.cardOrder = cards;\n    } else {\n      errors.push('invalid cardOrder');\n    }\n  } else {\n    errors.push('missing cardOrder');\n  }\n\n  if (Array.isArray(input.navPriority) && input.navPriority.length === 4) {\n    const nav = input.navPriority.map((x) => String(x));\n    if (nav.every((x) => allowedNav.has(x)) && new Set(nav).size === 4) {\n      cfg.navPriority = nav;\n    } else {\n      errors.push('invalid navPriority');\n    }\n  } else {\n    errors.push('missing navPriority');\n  }\n\n  if (allowedHero.has(String(input.heroStyle))) cfg.heroStyle = String(input.heroStyle);\n  else errors.push('invalid heroStyle');\n\n  if (allowedMood.has(String(input.colorMood))) cfg.colorMood = String(input.colorMood);\n  else errors.push('invalid colorMood');\n\n  const w = Number(input.wobblyIntensity);\n  if (Number.isFinite(w) && w >= 0 && w <= 1) cfg.wobblyIntensity = Number(w.toFixed(2));\n  else errors.push('invalid wobblyIntensity');\n\n  return { cfg, errors };\n}\n\nconst ipHash = $('Get Unclassified Sessions').item.json.ip_hash;\nlet source = 'gemini';\nlet raw = '';\nlet parsed = null;\n\ntry {\n  raw = $input.item.json.candidates?.[0]?.content?.parts?.[0]?.text || '';\n  const jsonStr = raw.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(jsonStr);\n} catch (err) {\n  source = 'fallback';\n}\n\nconst { cfg, errors } = sanitize(parsed || {});\nif (errors.length > 0) source = 'fallback';\n\nreturn [{\n  json: {\n    ...cfg,\n    ip_hash: ipHash,\n    policy_source: source,\n    validation_errors: errors,\n    raw_model_output: raw,\n  },\n}];"
+            },
+            "name": "Parse Config JSON",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "cd /data/ml && echo '{{ JSON.stringify($json) }}' | python3 validate_ui_config.py || true"
+            },
+            "name": "Validate Config",
+            "type": "n8n-nodes-base.executeCommand",
+            "position": [
+                1500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "cd /data/ml && echo \"{{ JSON.stringify({ ip_hash: $('Parse Config JSON').item.json.ip_hash, policy_source: $('Parse Config JSON').item.json.policy_source, validation_errors: $('Parse Config JSON').item.json.validation_errors, raw_model_output: $('Parse Config JSON').item.json.raw_model_output, validator: JSON.parse($json.stdout) }) }}\" | python3 persist_policy.py"
+            },
+            "name": "Persist Policy + Config",
+            "type": "n8n-nodes-base.executeCommand",
+            "position": [
+                1700,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "cd /data/ml && python3 rollback_policies.py || true"
+            },
+            "name": "Rollback Check",
+            "type": "n8n-nodes-base.executeCommand",
+            "position": [
+                460,
+                520
+            ]
+        }
+    ],
+    "connections": {
+        "Every Hour": {
+            "main": [
+                [
+                    {
+                        "node": "Get Unclassified Sessions",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Rollback Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Unclassified Sessions": {
+            "main": [
+                [
+                    {
+                        "node": "Classify Persona",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Classify Persona": {
+            "main": [
+                [
+                    {
+                        "node": "Update Persona",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Persona": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini UI Config",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini UI Config": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Config JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Config JSON": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Config",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Config": {
+            "main": [
+                [
+                    {
+                        "node": "Persist Policy + Config",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
