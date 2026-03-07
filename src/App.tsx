@@ -35,11 +35,11 @@ function AppShell() {
     <>
       <AdaptiveNav currentPath={path} onNavigate={navigate} />
       {path === '/technology' ? (
-        <Technology behaviorMode={behaviorMode} />
+        <Technology />
       ) : path === '/use-cases' ? (
         <UseCases behaviorMode={behaviorMode} />
       ) : path === '/api' ? (
-        <DataScienceApi behaviorMode={behaviorMode} />
+        <DataScienceApi />
       ) : (
         <Home
           persona={persona}

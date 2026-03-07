@@ -1,19 +1,23 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;600;700;900&display=swap');
 
 /* ── Custom theme (Tailwind v4 CSS-native) ───────────────────── */
 @theme {
   --font-inter: 'Inter', system-ui, sans-serif;
   --font-outfit: 'Outfit', sans-serif;
 
-  --color-primary: #6366f1;
-  /* Indigo */
-  --color-secondary: #a855f7;
-  /* Purple */
-  --color-accent: #14b8a6;
-  /* Teal */
-  --color-background: #09090b;
-  /* Zinc 950 */
+  --color-primary: #00F0FF;
+  --color-secondary: #FF007A;
+  --color-accent: #7000FF;
+  --color-background: #FFFFFF;
+}
+
+:root {
+  --glass-blur: 40px;
+  --accent-cyan: #00F0FF;
+  --accent-pink: #FF007A;
+  --accent-violet: #7000FF;
+  --card-weight: 0 40px 80px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Base Reset ──────────────────────────────────────────────── */
@@ -29,13 +33,96 @@ html {
 
 body {
   margin: 0;
-  background: #09090b;
-  color: #fafafa;
+  background-color: #FAFAFA;
+  color: #111111;
   -webkit-font-smoothing: antialiased;
   font-family: 'Inter', system-ui, sans-serif;
   overflow-x: hidden;
-  --bai-accent: #22d3ee;
-  --bai-wobble: 0.6;
+  position: relative;
+}
+
+/* Mesh Gradient Background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -2;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.12), transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(255, 0, 122, 0.12), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(112, 0, 255, 0.12), transparent 50%);
+  background-size: 200% 200%;
+  animation: meshFlow 20s ease-in-out infinite alternate;
+}
+
+/* Noise Texture Overlay */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  opacity: 0.25;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+@keyframes meshFlow {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes heartbeatPulse {
+  0% {
+    width: 0%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    width: 100%;
+    opacity: 0;
+  }
+
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+.neural-heartbeat {
+  position: absolute;
+  height: 1px;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+  animation: heartbeatPulse 4s infinite cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Font helpers ─────────────────────────────────────────────── */
@@ -57,38 +144,35 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--bai-accent) 35%, transparent);
+  background: rgba(0, 240, 255, 0.3);
 }
 
 a.no-underline {
   text-decoration: none;
 }
 
-/* ── Gradient text ────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, #e0e7ff, #c084fc);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* ── Utilities ────────────────────────────────────────────── */
+.kinetic-glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(var(--glass-blur)) brightness(1.1) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) brightness(1.1) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--card-weight);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease, backdrop-filter 0.8s ease;
+  animation: float 12s ease-in-out infinite;
 }
 
-/* ── Custom Utilities ─────────────────────────────────────────── */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.adaptive-accent {
-  box-shadow: 0 0 calc(20px + (var(--bai-wobble) * 12px)) color-mix(in srgb, var(--bai-accent) 30%, transparent);
+.kinetic-glass:hover {
+  /* The "Inhale" Effect */
+  filter: brightness(1.15) contrast(1.05);
+  backdrop-filter: blur(var(--glass-blur)) brightness(1.2) saturate(200%);
 }

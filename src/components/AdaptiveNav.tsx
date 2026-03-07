@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { AdaptiveButton } from './AdaptiveButton';
+import { motion, useScroll, useMotionValueEvent, Transition, useVelocity, useTransform, useSpring } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 interface AdaptiveNavProps {
     currentPath: string;
@@ -7,70 +7,131 @@ interface AdaptiveNavProps {
 }
 
 const NAV_ITEMS = [
-    { path: '/', label: 'Command Center' },
-    { path: '/technology', label: 'Technology' },
-    { path: '/use-cases', label: 'Use Cases' },
-    { path: '/api', label: 'Data API' },
+    { path: '/', label: 'Explore' },
+    { path: '/technology', label: 'Intelligence' },
+    { path: '/api', label: 'Sync' },
 ];
 
 export function AdaptiveNav({ currentPath, onNavigate }: AdaptiveNavProps) {
     const normalized = currentPath || '/';
+    const { scrollY } = useScroll();
+    const scrollVelocity = useVelocity(scrollY);
+    const smoothVelocity = useSpring(scrollVelocity, {
+        damping: 50,
+        stiffness: 400
+    });
+
+    // Map velocity to increase brightness/opacity on fast scrolls
+    const heartbeatOpacity = useTransform(smoothVelocity, [-1000, 0, 1000], [1, 0.3, 1]);
+
+    const [scrolled, setScrolled] = useState(false);
+    const [isHidden, setIsHidden] = useState(false);
+    const [confidence, setConfidence] = useState(96.4);
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        const previous = scrollY.getPrevious() ?? 0;
+        if (latest > 50) {
+            setScrolled(true);
+            if (latest > previous && latest > 150) {
+                setIsHidden(true);
+            } else {
+                setIsHidden(false);
+            }
+        } else {
+            setScrolled(false);
+            setIsHidden(false);
+        }
+    });
+
+    useEffect(() => {
+        // Fluctuate confidence slightly around 96%
+        const interval = setInterval(() => {
+            setConfidence(prev => {
+                const jitter = (Math.random() - 0.5) * 0.4; // +/- 0.2
+                const next = prev + jitter;
+                return Number(Math.max(92.1, Math.min(99.9, next)).toFixed(1));
+            });
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const kineticSpring: Transition = { type: 'spring', stiffness: 40, damping: 20 };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 md:px-8 py-3 backdrop-blur-xl bg-[#07080c]/55 border-b border-white/10">
-            <motion.div className="font-outfit font-bold text-lg md:text-xl tracking-tight flex items-center gap-2 text-white/95" whileHover={{ scale: 1.03 }}>
-                <div className="w-7 h-7 rounded-md bg-white/90 flex items-center justify-center text-[#09090b] text-base">❖</div>
-                BAI
-            </motion.div>
+        <motion.nav
+            className="fixed top-6 left-1/2 z-50 flex items-center justify-between w-[95%] max-w-6xl shadow-2xl kinetic-glass rounded-full px-6 py-4 overflow-hidden"
+            initial={{ y: -100, x: "-50%", opacity: 0 }}
+            animate={{
+                y: isHidden ? -100 : 0,
+                x: "-50%",
+                opacity: isHidden ? 0 : 1,
+                scale: scrolled ? 0.95 : 1
+            }}
+            transition={kineticSpring}
+        >
+            {/* Neural Heartbeat */}
+            <motion.div
+                className="absolute bottom-0 left-0 h-[2px] bg-[#00F0FF] shadow-[0_0_12px_#00F0FF]"
+                style={{
+                    opacity: heartbeatOpacity,
+                    animation: 'none' // override css
+                }}
+                animate={{ width: ["0%", "100%", "100%"], opacity: [0, 1, 0] }}
+                transition={{
+                    duration: 3, // fallback if styles don't bridge, but we'll use motion's repeat
+                    repeat: Infinity,
+                    ease: "linear"
+                }}
+            />
 
-            <AnimatePresence>
-                <div className="flex items-center gap-3 md:gap-4">
-                    {NAV_ITEMS.map((item, idx) =>
-                        item.path === '/' ? (
-                            <motion.a
-                                key={item.path}
-                                href={item.path}
-                                layout
-                                layoutId={`nav-${item.path}`}
-                                style={{ order: idx }}
-                                className="no-underline ml-1"
-                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onNavigate(item.path);
-                                }}
-                            >
-                                <AdaptiveButton
-                                    variant="primary"
-                                    className="!px-4 !py-2 !text-xs !rounded-full"
-                                >
-                                    {item.label}
-                                </AdaptiveButton>
-                            </motion.a>
-                        ) : (
-                            <motion.a
-                                key={item.path}
-                                href={item.path}
-                                layout
-                                layoutId={`nav-${item.path}`}
-                                style={{ order: idx }}
-                                className={`text-sm font-medium transition-colors px-1 py-2 no-underline ${
-                                    normalized === item.path
-                                        ? 'text-white'
-                                        : 'text-white/70 hover:text-white'
-                                }`}
-                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onNavigate(item.path);
-                                }}
-                            >
-                                {item.label}
-                            </motion.a>
-                        )
-                    )}
+            {/* Left: System Status */}
+            <div className="flex items-center gap-3 w-1/3">
+                <div className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00F0FF]"></span>
                 </div>
-            </AnimatePresence>
-        </nav>
+                <span className="font-outfit font-bold text-xs tracking-widest uppercase text-gray-500 hidden md:block">Neural Link: Active</span>
+            </div>
+
+            {/* Center: Ghost Nav */}
+            <div className="flex items-center justify-center gap-6 w-1/3">
+                {NAV_ITEMS.map((item) => {
+                    const isActive = normalized === item.path;
+                    let activeColorClass = 'text-gray-600 hover:text-black';
+
+                    if (isActive) {
+                        if (item.path === '/') activeColorClass = 'text-[#00F0FF] underline underline-offset-4';
+                        if (item.path === '/technology') activeColorClass = 'text-[#FF007A] underline underline-offset-4';
+                        if (item.path === '/api') activeColorClass = 'text-[#7000FF] underline underline-offset-4';
+                    }
+
+                    return (
+                        <a
+                            key={item.path}
+                            href={item.path}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onNavigate(item.path);
+                            }}
+                            className={`text-sm font-semibold tracking-wide transition-colors ${activeColorClass}`}
+                        >
+                            {item.label}
+                        </a>
+                    );
+                })}
+            </div>
+
+            {/* Right: Persona Chip / Confidence Score */}
+            <div className="flex justify-end w-1/3 hidden md:flex">
+                <motion.div
+                    layout
+                    transition={kineticSpring}
+                    className="flex items-center gap-2 px-4 py-1.5 font-mono font-semibold text-[10px] rounded-full bg-white/50 text-[#7000FF] tracking-widest uppercase border border-white/80 shadow-[0_0_15px_rgba(112,0,255,0.15)]"
+                >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7000FF] animate-pulse" />
+                    Confidence: {confidence.toFixed(1)}%
+                </motion.div>
+            </div>
+        </motion.nav>
     );
 }

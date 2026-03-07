@@ -88,14 +88,42 @@ function onResize() {
 }
 
 // ─── Event Handlers ────────────────────────────────────────────────────────
+let lastMouseX = 0;
+let lastMouseY = 0;
+let isSaccading = false;
+let lastSaccadeTime = 0;
+
 function onMouseMove(e: MouseEvent) {
     const now = performance.now();
-    if (now - lastMouseSampleAt < 80) return;
+    const dt = now - lastMouseSampleAt;
+    if (dt < 40) return; // 25fps sample rate for velocity
+
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    const v = (Math.sqrt(dx * dx + dy * dy) / dt) * 1000;
+
+    // Saccade filter: strictly log > 500px/s followed by a stop (200ms lock)
+    if (v > 500) {
+        lastSaccadeTime = now;
+        isSaccading = true;
+    } else if (isSaccading && v < 50 && (now - lastSaccadeTime) > 200) {
+        // Saccadic Dwell confirmed.
+        isSaccading = false;
+        void logEngagement('saccade_dwell', 1, {
+            x: e.clientX,
+            y: e.clientY,
+            path: window.location.pathname,
+        });
+    }
+
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
     lastMouseSampleAt = now;
 
-    // Normalize to 0–1 range
+    // Normalize to 0–1 range for aggregate buffer
     mouseXBuffer.push(e.clientX / window.innerWidth);
     mouseYBuffer.push(e.clientY / window.innerHeight);
+
     // Keep buffer manageable
     if (mouseXBuffer.length > 500) mouseXBuffer = mouseXBuffer.slice(-200);
     if (mouseYBuffer.length > 500) mouseYBuffer = mouseYBuffer.slice(-200);

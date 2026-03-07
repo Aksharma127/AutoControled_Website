@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import type { BehaviorMode, PersonaId } from '../types';
+import { KineticCard } from '../components/KineticCard';
+import { NeuralNetwork } from '../components/NeuralNetwork';
 
 interface HomeProps {
     persona: PersonaId;
@@ -15,23 +17,26 @@ const FEED = [
     ['INTENT-DRIVEN CTAs', 'Maximizing conversion without friction'],
     ['ANONYMOUS USER RECOGNITION', 'Secure, cookieless identity matching'],
     ['AUTONOMOUS A/B COHORTS', 'Measuring lift before every rollout'],
-    ['GEMINI CREATIVE DIRECTOR', 'Agentic optimization of design elements'],
-    ['STABLE GRIDS & GUARDRAILS', 'Guaranteed layout integrity'],
 ];
 
-function personaLabel(persona: PersonaId) {
-    if (persona === 'bouncer') return 'HIGH_SPEED_SKIMMER';
-    if (persona === 'reader') return 'DEEP_READER';
-    if (persona === 'explorer') return 'BROAD_EXPLORER';
-    return 'CALIBRATING';
-}
-
-function headlineByMode(mode: BehaviorMode) {
-    if (mode === 'high_speed_skimmer') return 'Fast signal routing for rapid decisions.';
-    if (mode === 'low_engagement') return 'Re-engagement flow activated with adaptive emphasis.';
-    if (mode === 'high_intent') return 'Retention mode enabled for high-intent sessions.';
-    return 'Predictive UI that anticipates user intent.';
-}
+const HERO_COPY: Record<string, { headline: string; sub: string }> = {
+    explorer: {
+        headline: 'AUTONOMOUS\nUI_OS',
+        sub: 'This interface analyzes Saccadic movements to optimize geometry locally.',
+    },
+    reader: {
+        headline: 'AUTONOMOUS\nUI_OS',
+        sub: 'Built on your behavior. It breathes and learns as you dwell.',
+    },
+    bouncer: {
+        headline: 'AUTONOMOUS\nUI_OS',
+        sub: 'Removing noise and focusing purely on the critical paths.',
+    },
+    unknown: {
+        headline: 'AUTONOMOUS\nUI_OS',
+        sub: 'Awaiting sufficient telemetry to configure your designated workspace.',
+    }
+};
 
 export function Home({
     persona,
@@ -41,133 +46,141 @@ export function Home({
     onPrimaryIntent,
     onSecondaryIntent,
 }: HomeProps) {
-    const isSkimmer = behaviorMode === 'high_speed_skimmer';
-    const isLowEngagement = behaviorMode === 'low_engagement';
-    const isHighIntent = behaviorMode === 'high_intent';
+    const copy = HERO_COPY[persona] ?? HERO_COPY.unknown;
+
+    // The AI config maps the gravity grid depending on priority
+    let gridTemplate = `
+      "dossier dossier apex apex"
+      "feed monolith monolith monolith"
+      "pulse monolith monolith monolith"
+      "control . . ."
+    `;
+
+    if (persona === 'reader' || behaviorMode === 'low_engagement') {
+        gridTemplate = `
+          "apex apex dossier dossier"
+          "monolith monolith monolith feed"
+          "monolith monolith monolith pulse"
+          ". . control control"
+        `;
+    }
 
     return (
-        <div className="min-h-screen bg-[#07080c] text-white px-6 md:px-8 pb-12 pt-24">
-            <header className="max-w-7xl mx-auto mb-10">
-                <p className="text-xs font-mono text-cyan-300/80 tracking-wider mb-3">
-                    BAI_SYSTEM.V2 // UNLEASHING BEHAVIORAL INTELLIGENCE.
-                </p>
-                <h1 className="font-outfit font-black text-4xl md:text-6xl leading-tight">
-                    The First Fully Autonomous, Production-Grade UI Optimization Platform.
-                </h1>
-            </header>
+        <div className="min-h-screen bg-transparent text-gray-900 font-inter pt-28 pb-20 px-4 md:px-12 relative overflow-hidden">
+            <section
+                className="w-full max-w-[1400px] mx-auto grid gap-6 md:gap-8 relative z-10"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                    gridAutoRows: 'minmax(120px, auto)',
+                    gridTemplateAreas: gridTemplate,
+                    transition: 'all 2s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+            >
+                {/* The Monolith */}
+                <KineticCard mass={2} style={{ gridArea: 'monolith' }} className="flex flex-col justify-center min-h-[500px] md:min-h-[600px] bg-white/40 border-2 relative">
+                    <NeuralNetwork />
+                    <div className="relative z-10">
+                        <div className="inline-flex self-start items-center gap-2 px-4 py-1.5 rounded-full bg-black/5 border border-black/10 text-gray-600 text-xs font-mono mb-8 uppercase tracking-widest">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse shadow-[0_0_10px_#00F0FF]" />
+                            {isLoading ? 'Calibrating...' : 'System Active'}
+                        </div>
 
-            <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[130px]">
-                <section className="md:col-span-4 md:row-span-1 rounded-2xl border border-white/15 bg-black/30 p-5">
-                    <p className="text-xs font-mono text-emerald-300 mb-2">SYSTEM STATUS: OPERATIONAL</p>
-                    <p className="text-xs font-mono text-white/80">
-                        USER PERSONA: {personaLabel(persona)}
-                    </p>
-                    <p className="text-xs font-mono text-white/80">
-                        ENGAGEMENT: {engagementScore}%
-                    </p>
-                    <p className="text-xs font-mono text-white/80 mb-3">
-                        IDENTIFICATION: cookieless hash verified
-                    </p>
-                    <div className="h-8 flex items-end gap-1">
-                        {Array.from({ length: 16 }).map((_, i) => (
-                            <motion.div
-                                key={i}
-                                className="w-1 rounded-full bg-cyan-300/80"
-                                animate={{ height: [6, 22, 8, 26, 10] }}
-                                transition={{
-                                    duration: 1.8 + i * 0.08,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                    delay: i * 0.04,
-                                }}
-                            />
-                        ))}
-                    </div>
-                </section>
+                        <h1
+                            className="font-inter font-black text-6xl md:text-[7rem] leading-[0.85] mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-gray-900 to-gray-500"
+                            style={{ whiteSpace: 'pre-line' }}
+                        >
+                            {copy.headline}
+                        </h1>
 
-                <section
-                    className={`rounded-2xl border border-white/15 bg-black/30 p-6 ${
-                        isSkimmer ? 'md:col-span-4 md:row-span-2' : 'md:col-span-8 md:row-span-2'
-                    }`}
-                >
-                    <h2 className="font-outfit text-2xl md:text-3xl font-bold mb-3">
-                        {headlineByMode(behaviorMode)}
-                    </h2>
-                    <p className="text-white/70 max-w-3xl">
-                        Our system replaces manual data analysis departments with an automated
-                        feedback loop. No more A/B testing. Just seamless, incremental optimization
-                        bounded by strict safety guardrails.
-                    </p>
-                    <div className="mt-6 h-24 rounded-xl border border-white/10 bg-white/5 relative overflow-hidden">
-                        <motion.div
-                            className="absolute inset-y-0 left-0 w-10 bg-cyan-300/20"
-                            animate={{ x: ['0%', '520%', '0%'] }}
-                            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:22px_22px]" />
-                    </div>
-                </section>
+                        <p className="text-gray-600 text-xl md:text-2xl max-w-2xl font-light mb-12 leading-relaxed">
+                            {copy.sub}
+                        </p>
 
-                <section className="md:col-span-12 md:row-span-3 rounded-2xl border border-white/15 bg-black/30 p-6">
-                    <h3 className="text-lg font-outfit font-semibold mb-4">Visual Intelligence Feed</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {FEED.map(([title, desc]) => (
-                            <article
-                                key={title}
-                                className="rounded-xl p-4 border border-white/10 bg-white/[0.03]"
+                        <div className="flex flex-wrap items-center gap-6">
+                            <button
+                                onClick={onPrimaryIntent}
+                                className="relative px-8 py-4 font-outfit font-bold tracking-wide uppercase text-white rounded-full bg-gray-900 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.3)] hover:scale-105 hover:shadow-[0_20px_60px_rgba(0,240,255,0.4)] transition-all duration-500 will-change-transform"
                             >
-                                <p className="text-xs font-mono text-cyan-200 mb-2">{title}</p>
-                                <p className="text-sm text-white/70">{desc}</p>
-                            </article>
+                                <span className="relative z-10">Establish_Connection</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#00F0FF] to-[#7000FF] opacity-0 hover:opacity-100 transition-opacity duration-500" />
+                            </button>
+                        </div>
+                    </div>
+                </KineticCard>
+
+                {/* The Dossier */}
+                <KineticCard mass={1} style={{ gridArea: 'dossier' }} className="flex flex-col justify-between">
+                    <h3 className="font-outfit font-bold text-gray-800 text-lg uppercase tracking-widest">Persona Dossier</h3>
+                    <div className="space-y-2 mt-4">
+                        <div className="flex justify-between text-sm font-mono text-gray-600">
+                            <span>Intent Class:</span>
+                            <span className="font-bold text-black">{persona.toUpperCase()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-mono text-gray-600">
+                            <span>Engagement:</span>
+                            <span className="font-bold text-[#FF007A]">{engagementScore}%</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-mono text-gray-600">
+                            <span>Behavior Mode:</span>
+                            <span className="font-bold text-[#7000FF]">{behaviorMode.replace(/_/g, ' ').toUpperCase()}</span>
+                        </div>
+                    </div>
+                </KineticCard>
+
+                {/* The Feed */}
+                <KineticCard mass={1} style={{ gridArea: 'feed' }} className="flex flex-col">
+                    <h3 className="font-outfit font-bold text-gray-800 text-lg uppercase tracking-widest mb-4">Active Deployments</h3>
+                    <div className="flex-1 flex flex-col gap-3 font-mono text-xs text-gray-500">
+                        {FEED.map(([title]) => (
+                            <div key={title} className="p-3 rounded-xl bg-white/40 border border-white/80">→ {title}</div>
                         ))}
                     </div>
-                </section>
+                </KineticCard>
 
-                <section className="md:col-span-4 md:row-span-2 rounded-2xl border border-white/15 bg-black/30 p-4">
-                    <div className="grid grid-cols-2 gap-3 h-full">
-                        <button
-                            onClick={onPrimaryIntent}
-                            className={`rounded-xl p-4 text-left border transition ${
-                                isLowEngagement
-                                    ? 'border-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.35)]'
-                                    : 'border-white/15'
-                            } bg-white/5 hover:bg-white/10`}
-                        >
-                            <p className="text-xs font-mono text-cyan-200 mb-2">Card A (Primary)</p>
-                            <p className="font-semibold">
-                                {isHighIntent ? 'VIEW ANALYTICS DASHBOARD' : 'DEPLOY EXPERIMENT'}
-                            </p>
-                        </button>
-                        <button
-                            onClick={onSecondaryIntent}
-                            className="rounded-xl p-4 text-left border border-white/15 bg-white/5 hover:bg-white/10 transition"
-                        >
-                            <p className="text-xs font-mono text-cyan-200 mb-2">Card B (Secondary)</p>
-                            <p className="font-semibold">REQUEST SYSTEM ADVISORY</p>
-                        </button>
-                    </div>
-                </section>
-
-                {isSkimmer && (
-                    <section className="md:col-span-4 md:row-span-1 rounded-2xl border border-white/15 bg-black/30 p-4">
-                        <p className="text-xs font-mono text-amber-300 mb-3">SKIMMER QUICK EXITS</p>
-                        <div className="flex flex-wrap gap-2">
-                            {['Open API', 'Jump to Cases', 'Get Summary', 'Request Demo'].map((x) => (
-                                <button
-                                    key={x}
-                                    className="px-3 py-1.5 rounded-lg text-xs border border-white/15 bg-white/5 hover:bg-white/10"
-                                >
-                                    {x}
-                                </button>
+                {/* The Pulse */}
+                <KineticCard mass={0.5} style={{ gridArea: 'pulse' }} className="flex flex-col justify-center items-center overflow-hidden relative">
+                    <h3 className="absolute top-6 left-6 font-outfit font-bold text-gray-800 text-lg uppercase tracking-widest z-10">Telemetry Pulse</h3>
+                    {/* Simplified pulse for performance inside Glass */}
+                    <div className="w-full h-full flex items-center justify-center pt-8">
+                        <div className="flex items-end gap-1 h-16">
+                            {Array.from({ length: 16 }).map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="w-1.5 rounded-full bg-gradient-to-t from-[#00F0FF] to-[#FF007A]"
+                                    animate={{ height: [10, 30 + Math.random() * 30, 10] }}
+                                    transition={{
+                                        duration: 1.5 + Math.random(),
+                                        repeat: Infinity,
+                                        ease: 'easeInOut',
+                                        delay: i * 0.1,
+                                    }}
+                                />
                             ))}
                         </div>
-                    </section>
-                )}
+                    </div>
+                </KineticCard>
 
-                {isLoading && (
-                    <section className="md:col-span-12 rounded-2xl border border-white/10 bg-white/5 h-16 animate-pulse" />
-                )}
-            </main>
+                {/* The Control */}
+                <KineticCard mass={1.5} style={{ gridArea: 'control' }} className="flex flex-col justify-between">
+                    <h3 className="font-outfit font-bold text-gray-800 text-lg uppercase tracking-widest">System Overrides</h3>
+                    <div className="flex flex-col gap-3 mt-4">
+                        <button
+                            onClick={onSecondaryIntent}
+                            className="text-left p-3 rounded-xl border border-gray-200 hover:border-[#00F0FF] hover:bg-white/50 transition-all font-mono text-xs text-gray-600"
+                        >
+                            [TRIGGER_SECONDARY_INTENT]
+                        </button>
+                        <label className="flex items-center justify-between text-sm font-mono text-gray-600 cursor-pointer">
+                            <span>Morphing</span>
+                            <div className="w-10 h-5 rounded-full bg-[#00F0FF]/20 border border-[#00F0FF] relative">
+                                <div className="absolute right-1 top-1 w-3 h-3 rounded-full bg-[#00F0FF]" />
+                            </div>
+                        </label>
+                    </div>
+                </KineticCard>
+
+            </section>
         </div>
     );
 }

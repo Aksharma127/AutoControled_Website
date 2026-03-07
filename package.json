@@ -10,13 +10,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@supabase/supabase-js": "^2.98.0",
+    "@types/three": "^0.183.1",
     "autoprefixer": "^10.4.27",
+    "chart.js": "^4.5.1",
     "framer-motion": "^12.35.0",
     "postcss": "^8.5.8",
     "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
